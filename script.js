@@ -1,4 +1,4 @@
-(function() {
+(function () {
   function updateTitle() {
     const currentTitle = document.title;
 
@@ -7,16 +7,34 @@
       hostname = window.location.hostname;
     }
 
-    const suffix  = " [" + hostname + "]";
+    const suffix = " [" + hostname + "]";
     if (!currentTitle.endsWith(suffix)) {
       document.title = currentTitle + suffix;
     }
   }
 
-  // Update the title when the page loads
-  updateTitle();
+  function waitForTitle() {
+    const titleTag = document.querySelector("head > title");
 
-  // Listen for changes to the title element (for dynamic title updates)
-  const titleObserver = new MutationObserver(updateTitle);
-  titleObserver.observe(document.querySelector('head > title'), { childList: true });
+    if (titleTag) {
+      updateTitle();
+
+      // Observe <title> changes
+      const titleObserver = new MutationObserver(updateTitle);
+      titleObserver.observe(titleTag, { childList: true });
+    } else {
+      setTimeout(waitForTitle, 50);
+    }
+  }
+
+  waitForTitle();
+
+  window.addEventListener("popstate", updateTitle);
+  window.addEventListener("hashchange", updateTitle);
+
+  const origPushState = history.pushState;
+  history.pushState = function () {
+    origPushState.apply(this, arguments);
+    setTimeout(updateTitle, 50);
+  };
 })();
